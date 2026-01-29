@@ -51,6 +51,16 @@ def register_tools(mcp: FastMCP) -> None:
                     return {"error": "CSV file is empty or has no headers"}
 
                 columns = list(reader.fieldnames)
+                
+                # Check for duplicate column names (causes silent data loss)
+                if len(columns) != len(set(columns)):
+                    duplicates = [col for col in columns if columns.count(col) > 1]
+                    unique_duplicates = list(set(duplicates))
+                    return {
+                        "error": f"CSV has duplicate column names: {unique_duplicates}. This causes data loss.",
+                        "columns": columns,
+                        "duplicate_columns": unique_duplicates
+                    }
 
                 # Apply offset and limit
                 rows = []
