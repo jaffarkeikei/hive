@@ -6,7 +6,15 @@ def register_tools(mcp: FastMCP) -> None:
     """Register file content replacement tools with the MCP server."""
 
     @mcp.tool()
-    def replace_file_content(path: str, target: str, replacement: str, workspace_id: str, agent_id: str, session_id: str) -> dict:
+    def replace_file_content(
+        path: str,
+        target: str,
+        replacement: str,
+        workspace_id: str,
+        agent_id: str,
+        session_id: str,
+        max_file_size: int = 10 * 1024 * 1024  # 10 MB default
+    ) -> dict:
         """
         Purpose
             Replace all occurrences of a target string with replacement text in a file.
@@ -36,6 +44,13 @@ def register_tools(mcp: FastMCP) -> None:
             secure_path = get_secure_path(path, workspace_id, agent_id, session_id)
             if not os.path.exists(secure_path):
                 return {"error": f"File not found at {path}"}
+            
+            # Check file size before reading
+            file_size = os.path.getsize(secure_path)
+            if file_size > max_file_size:
+                return {
+                    "error": f"File too large: {file_size} bytes (max: {max_file_size})"
+                }
 
             with open(secure_path, "r", encoding="utf-8") as f:
                 content = f.read()
