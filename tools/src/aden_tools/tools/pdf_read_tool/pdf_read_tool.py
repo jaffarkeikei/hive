@@ -68,6 +68,7 @@ def register_tools(mcp: FastMCP) -> None:
         file_path: str,
         pages: str | None = None,
         max_pages: int = 100,
+        max_content_size: int = 10 * 1024 * 1024,  # 10 MB default
         include_metadata: bool = True,
     ) -> dict:
         """
@@ -119,11 +120,24 @@ def register_tools(mcp: FastMCP) -> None:
             if isinstance(page_indices, dict):  # Error dict
                 return page_indices
 
-            # Extract text from pages
+            # Extract text from pages with size limit
             content_parts = []
+            total_size = 0
+            truncated = False
+            
             for i in page_indices:
                 page_text = reader.pages[i].extract_text() or ""
-                content_parts.append(f"--- Page {i + 1} ---\n{page_text}")
+                page_content = f"--- Page {i + 1} ---\n{page_text}"
+                
+                # Check if adding this page would exceed limit
+                page_bytes = len(page_content.encode("utf-8"))
+                if total_size + page_bytes > max_content_size:
+                    content_parts.append("\n\n[... Content truncated due to size limit ...]")
+                    truncated = True
+                    break
+                
+                content_parts.append(page_content)
+                total_size += page_bytes
 
             content = "\n\n".join(content_parts)
 
@@ -134,6 +148,7 @@ def register_tools(mcp: FastMCP) -> None:
                 "pages_extracted": len(page_indices),
                 "content": content,
                 "char_count": len(content),
+                "truncated": truncated,
             }
 
             # Add metadata if requested
