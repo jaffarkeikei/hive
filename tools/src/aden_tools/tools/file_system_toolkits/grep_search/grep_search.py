@@ -7,7 +7,15 @@ def register_tools(mcp: FastMCP) -> None:
     """Register grep search tools with the MCP server."""
 
     @mcp.tool()
-    def grep_search(path: str, pattern: str, workspace_id: str, agent_id: str, session_id: str, recursive: bool = False) -> dict:
+    def grep_search(
+        path: str,
+        pattern: str,
+        workspace_id: str,
+        agent_id: str,
+        session_id: str,
+        recursive: bool = False,
+        max_matches: int = 1000
+    ) -> dict:
         """
         Search for a pattern in a file or directory within the session sandbox.
 
@@ -61,6 +69,19 @@ def register_tools(mcp: FastMCP) -> None:
                                     "line_number": i,
                                     "line_content": line.strip()
                                 })
+                                
+                                # Stop if limit reached
+                                if len(matches) >= max_matches:
+                                    return {
+                                        "success": True,
+                                        "pattern": pattern,
+                                        "path": path,
+                                        "recursive": recursive,
+                                        "matches": matches,
+                                        "total_matches": len(matches),
+                                        "truncated": True,
+                                        "message": f"Stopped after {max_matches} matches"
+                                    }
                 except (UnicodeDecodeError, PermissionError):
                     # As per README: Skips the files that cannot be decoded or have permission errors
                     continue
