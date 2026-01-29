@@ -51,14 +51,30 @@ def register_tools(mcp: FastMCP) -> None:
                 text=True,
                 timeout=60
             )
+            
+            # Limit output size to prevent OOM
+            MAX_OUTPUT_SIZE = 1 * 1024 * 1024  # 1 MB
+            
+            stdout = result.stdout
+            stderr = result.stderr
+            truncated = False
+            
+            if len(stdout) > MAX_OUTPUT_SIZE:
+                stdout = stdout[:MAX_OUTPUT_SIZE] + "\n\n[... stdout truncated ...]"
+                truncated = True
+            
+            if len(stderr) > MAX_OUTPUT_SIZE:
+                stderr = stderr[:MAX_OUTPUT_SIZE] + "\n\n[... stderr truncated ...]"
+                truncated = True
 
             return {
                 "success": True,
                 "command": command,
                 "return_code": result.returncode,
-                "stdout": result.stdout,
-                "stderr": result.stderr,
-                "cwd": cwd or "."
+                "stdout": stdout,
+                "stderr": stderr,
+                "cwd": cwd or ".",
+                "truncated": truncated
             }
         except subprocess.TimeoutExpired:
             return {"error": "Command timed out after 60 seconds"}
