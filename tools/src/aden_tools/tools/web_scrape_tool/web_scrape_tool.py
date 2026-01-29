@@ -220,8 +220,16 @@ def register_tools(mcp: FastMCP) -> None:
                 for a in soup.find_all("a", href=True)[:50]:
                     href = a["href"]
                     link_text = a.get_text(strip=True)
-                    if link_text and href:
-                        links.append({"text": link_text, "href": href})
+                    
+                    if not link_text or not href:
+                        continue
+                    
+                    # Filter to only HTTP/HTTPS schemes (skip javascript:, mailto:, tel:, etc.)
+                    parsed = urlparse(href)
+                    if parsed.scheme and parsed.scheme not in ("http", "https"):
+                        continue
+                    
+                    links.append({"text": link_text, "href": href})
                 result["links"] = links
 
             return result
