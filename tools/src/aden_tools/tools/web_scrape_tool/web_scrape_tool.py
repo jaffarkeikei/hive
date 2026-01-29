@@ -201,9 +201,14 @@ def register_tools(mcp: FastMCP) -> None:
             # Clean up whitespace
             text = " ".join(text.split())
 
-            # Truncate if needed
-            if len(text) > max_length:
-                text = text[:max_length] + "..."
+            # Truncate if needed (by bytes, not characters)
+            text_bytes = text.encode("utf-8")
+            if len(text_bytes) > max_length:
+                # Reserve 3 bytes for "..."
+                truncate_size = max_length - 3
+                truncated_bytes = text_bytes[:truncate_size]
+                # Decode safely to avoid cutting mid-character
+                text = truncated_bytes.decode("utf-8", errors="ignore") + "..."
 
             result: dict[str, Any] = {
                 "url": str(response.url),
