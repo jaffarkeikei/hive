@@ -43,9 +43,13 @@ def register_tools(mcp: FastMCP) -> None:
                 files = [secure_path]
             elif recursive:
                 files = []
-                for root, _, filenames in os.walk(secure_path):
+                for root, _, filenames in os.walk(secure_path, followlinks=False):  # Don't follow symlinks
                     for filename in filenames:
-                        files.append(os.path.join(root, filename))
+                        file_path = os.path.join(root, filename)
+                        # Skip if it's a symlink (security)
+                        if os.path.islink(file_path):
+                            continue
+                        files.append(file_path)
             else:
                 files = [os.path.join(secure_path, f) for f in os.listdir(secure_path) if os.path.isfile(os.path.join(secure_path, f))]
 
